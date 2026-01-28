@@ -34,7 +34,7 @@ class ReasoningGymBase(Environment):
 
     # Subclasses must override these class variables
     DATASET_NAME: ClassVar[str] = None
-    DATASET_SIZE: ClassVar[int] = 500
+    DATASET_SIZE: ClassVar[int] = 1000
     DATASET_SEED: ClassVar[int] = 42
 
     @classmethod
