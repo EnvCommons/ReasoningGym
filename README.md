@@ -4,7 +4,7 @@
 
 ## Description
 
-Reasoning-Gym-Envs is an environment wrapper for the reasoning-gym Python package, providing 105+ procedurally-generated reasoning datasets as OpenReward environments. It covers 12 categories including algebra, algorithmic problems, ARC variants, arithmetic, code execution, cognition, games, geometry, graphs, induction, logic, and probability.
+Reasoning-Gym-Envs is an environment wrapper for the [reasoning-gym](https://github.com/open-thought/reasoning-gym) Python package, providing 105+ procedurally-generated reasoning datasets as OpenReward environments. It covers 12 categories including algebra, algorithmic problems, ARC variants, arithmetic, code execution, cognition, games, geometry, graphs, induction, logic, and probability.
 
 ## Capabilities
 
@@ -61,7 +61,7 @@ Single-turn. The agent reads the reasoning problem and submits one answer.
 
 ## Environment Difficulty
 
-Reasoning-Gym-Envs evaluates diverse reasoning capabilities across 105+ procedurally-generated datasets with algorithmic verification.
+[Put environment difficulty here]
 
 ## Other Environment Requirements
 
