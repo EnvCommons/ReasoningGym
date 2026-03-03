@@ -74,10 +74,13 @@ Agents in Reasoning-Gym-Envs solve reasoning problems in a standard environment.
 ## Citation
 
 ```bibtex
-@software{reasoning_gym,
-  title={Reasoning-Gym: A Collection of Reasoning Datasets},
-  author={open-thought},
+@misc{stojanovski2025reasoninggymreasoningenvironments,
+  title={REASONING GYM: Reasoning Environments for Reinforcement Learning with Verifiable Rewards},
+  author={Zafir Stojanovski and Oliver Stanley and Joe Sharratt and Richard Jones and Abdulhakeem Adefioye and Jean Kaddour and Andreas Köpf},
   year={2025},
-  url={https://github.com/open-thought/reasoning-gym}
+  eprint={2505.24760},
+  archivePrefix={arXiv},
+  primaryClass={cs.LG},
+  url={https://arxiv.org/abs/2505.24760}
 }
 ```
