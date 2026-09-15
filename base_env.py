@@ -12,6 +12,8 @@ import reasoning_gym
 from openreward.environments import Environment, JSONObject, TextBlock, ToolOutput, tool
 from pydantic import BaseModel, Field
 
+from post2000_filter import mentions_post_2000_topic
+
 
 class SubmitAnswerInput(BaseModel):
     """Input schema for the submit_answer tool."""
@@ -37,48 +39,82 @@ class ReasoningGymBase(Environment):
     DATASET_SIZE: ClassVar[int] = 1000
     DATASET_SEED: ClassVar[int] = 42
 
+    # "train_old" oversamples this many multiples of DATASET_SIZE (same seed,
+    # so entries 0..DATASET_SIZE-1 are identical to "train"'s -- reasoning_gym
+    # generation is deterministic and index-stable across different `size`
+    # values for the same seed), then keeps the first DATASET_SIZE entries
+    # whose question text has no post-2000 hit. A handful of datasets embed a
+    # random real-world year/date or draw from a template pool that includes
+    # a few modern-sounding words; oversampling absorbs that without special-
+    # casing every dataset individually.
+    OLD_OVERSAMPLE: ClassVar[int] = 8
+
     @classmethod
     def list_splits(cls) -> list[str]:
-        """Return available data splits.
+        """Return available data splits."""
+        return ["train", "train_old"]
 
-        Returns:
-            List containing only "train" split (all reasoning-gym datasets are training data)
-        """
-        return ["train"]
+    @classmethod
+    def _old_filtered_indices(cls) -> list[int]:
+        """Indices into the oversampled dataset whose question passes the
+        filter, capped at DATASET_SIZE. Cached per class."""
+        if not hasattr(cls, "_old_filtered_indices_cache"):
+            oversampled = reasoning_gym.create_dataset(
+                cls.DATASET_NAME, size=cls.DATASET_SIZE * cls.OLD_OVERSAMPLE, seed=cls.DATASET_SEED
+            )
+            indices = []
+            for i in range(len(oversampled)):
+                if not mentions_post_2000_topic(oversampled[i]["question"]):
+                    indices.append(i)
+                    if len(indices) >= cls.DATASET_SIZE:
+                        break
+            cls._old_dataset_cache = oversampled
+            cls._old_filtered_indices_cache = indices
+        return cls._old_filtered_indices_cache
 
     @classmethod
     def list_tasks(cls, split: str) -> list[JSONObject]:
         """List all available tasks for a given split.
 
         Args:
-            split: The data split ("train" only)
+            split: The data split ("train" or "train_old")
 
         Returns:
-            List of task specifications with task_id
+            List of task specifications with task_id (and split, for "train_old")
         """
-        if split != "train":
-            return []
-        return [{"task_id": str(i)} for i in range(cls.DATASET_SIZE)]
+        if split == "train":
+            return [{"task_id": str(i)} for i in range(cls.DATASET_SIZE)]
+        if split == "train_old":
+            n = len(cls._old_filtered_indices())
+            return [{"task_id": str(i), "split": "train_old"} for i in range(n)]
+        return []
 
     def __init__(self, task_spec: JSONObject, secrets: dict[str, str] = {}) -> None:
         """Initialize the environment with a specific task.
 
         Args:
-            task_spec: Task specification containing task_id
+            task_spec: Task specification containing task_id (and optionally
+                split="train_old" -- absent/"train" behaves as before)
             secrets: API keys and secrets (not used for reasoning-gym)
         """
         super().__init__(task_spec)
 
-        # Class-level dataset caching: create dataset once per class, not per task
-        # This significantly improves performance when multiple tasks are run
-        if not hasattr(self.__class__, "_dataset_cache"):
-            self.__class__._dataset_cache = reasoning_gym.create_dataset(
-                self.DATASET_NAME, size=self.DATASET_SIZE, seed=self.DATASET_SEED
-            )
-
-        self.dataset = self.__class__._dataset_cache
+        split = task_spec.get("split", "train")
         self.task_id = int(task_spec["task_id"])
-        self.entry = self.dataset[self.task_id]
+
+        if split == "train_old":
+            filtered_indices = self.__class__._old_filtered_indices()
+            self.dataset = self.__class__._old_dataset_cache
+            self.entry = self.dataset[filtered_indices[self.task_id]]
+        else:
+            # Class-level dataset caching: create dataset once per class, not per task
+            # This significantly improves performance when multiple tasks are run
+            if not hasattr(self.__class__, "_dataset_cache"):
+                self.__class__._dataset_cache = reasoning_gym.create_dataset(
+                    self.DATASET_NAME, size=self.DATASET_SIZE, seed=self.DATASET_SEED
+                )
+            self.dataset = self.__class__._dataset_cache
+            self.entry = self.dataset[self.task_id]
 
     async def get_prompt(self) -> list[TextBlock]:
         """Get the prompt/question for this task.
