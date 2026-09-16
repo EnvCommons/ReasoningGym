@@ -35,6 +35,18 @@ POST_2000_TERMS = [
     "marvel cinematic", "fortnite", "minecraft", "roblox", "pokemon go",
     "league of legends", "world of warcraft", "call of duty", "xbox",
     "playstation 3", "ps3", "ps4", "ps5", "nintendo switch",
+    # Found via an audit (2026-09-16) of a 30-per-dataset sample run through
+    # a full regex+LLM motivation-rule pass: specific post-2000 smartphone
+    # models and activity/culture terms drawn from zebra_puzzles' and
+    # needle_haystack's fixed attribute/hobby pools, not caught by the
+    # original list. Deliberately NOT adding some other LLM-flagged terms
+    # from that same audit ("machine learning", "data science", "augmented
+    # reality", "parkour") -- those are generic/pre-2000-coined terms and
+    # would be over-broad false positives (same failure mode documented in
+    # tulu3_compare's cutoff1999.py: an in-context LLM call can mis-name a
+    # generic term as "disqualifying").
+    "google pixel 6", "huawei p50", "oneplus 9", "samsung galaxy s21",
+    "geocaching", "segways", "boba tea", "blogging", "vlogging",
 ]
 
 _TERMS_RE = re.compile(r"\b(" + "|".join(re.escape(t) for t in POST_2000_TERMS) + r")\b", re.IGNORECASE)
